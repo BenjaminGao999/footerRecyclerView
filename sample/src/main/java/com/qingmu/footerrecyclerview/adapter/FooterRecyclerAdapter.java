@@ -122,6 +122,7 @@ public class FooterRecyclerAdapter extends RecyclerView.Adapter {
     }
     public void setLoaded() {
         isLoading = false;
+
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
