@@ -10,6 +10,7 @@ import android.widget.FrameLayout;
 
 import com.qingmu.footerrecyclerview.R;
 import com.qingmu.footerrecyclerview.adapter.FooterRecyclerAdapter;
+import com.qingmu.footerrecyclerview.callback.LoadMoreDataListener;
 import com.qingmu.footerrecyclerview.callback.TestCallBack;
 import com.qingmu.footerrecyclerview.module.TestModule;
 
@@ -27,8 +28,8 @@ public class FooterRecyclerActivity extends AppCompatActivity implements SwipeRe
     @BindView(R.id.id_fl_container)
     FrameLayout idFlContainer;
     private int currentPage = 0;
-    private int PAGE_COUNT = 8;
-    private int TOTAL_COUNT = 24;
+    private int PAGE_COUNT = 18;
+    private int TOTAL_COUNT = 54;
     private int mCurrentCount = 0;
     private FooterRecyclerAdapter mFooterRecyclerAdapter;
     Handler mHandler = new Handler();
@@ -50,8 +51,16 @@ public class FooterRecyclerActivity extends AppCompatActivity implements SwipeRe
         getTestDatas(currentPage, new TestCallBack() {
             @Override
             public void onSuccess(ArrayList<TestModule> testModules) {
-                mFooterRecyclerAdapter.setNewDatas(testModules);
                 idSwiperefreshFooter.setRefreshing(false);
+
+                //根据第一次请求数据判断是否要携带加载更多的逻辑
+                if (testModules.size() < PAGE_COUNT) {
+                    mFooterRecyclerAdapter.setNewDatas(testModules);
+                } else {
+                    mFooterRecyclerAdapter.setLoadMoreDataListener(loadmoreListener);
+                    testModules.add(null);//为了加上footerView
+                    mFooterRecyclerAdapter.setNewDatas(testModules);
+                }
             }
 
             @Override
@@ -64,11 +73,30 @@ public class FooterRecyclerActivity extends AppCompatActivity implements SwipeRe
     //高度解耦。先搭建空台子，然后再演戏（加载数据）。
     private void initAdapter() {
         ArrayList<TestModule> testModules = new ArrayList<>();//为了方便后续操作，要求构造方法的参数不能为null
-        mFooterRecyclerAdapter = new FooterRecyclerAdapter(testModules);
         idRecyclerviewFooter.setLayoutManager(new LinearLayoutManager(this));
+        mFooterRecyclerAdapter = new FooterRecyclerAdapter(testModules, idRecyclerviewFooter);
         idRecyclerviewFooter.setAdapter(mFooterRecyclerAdapter);
+        //设置加载更多的监听
+//        mFooterRecyclerAdapter.setLoadMoreDataListener(loadmoreListener);
     }
 
+    private LoadMoreDataListener loadmoreListener = new LoadMoreDataListener() {
+        @Override
+        public void loadMoreData() {
+            getTestDatas(++currentPage, new TestCallBack() {
+                @Override
+                public void onSuccess(ArrayList<TestModule> testModules) {
+                    mFooterRecyclerAdapter.addDatas(testModules);
+                    mFooterRecyclerAdapter.setLoaded();
+                }
+
+                @Override
+                public void onFail(String msg) {
+
+                }
+            });
+        }
+    };
 
     private void initListener() {
         idSwiperefreshFooter.setOnRefreshListener(this);
@@ -82,7 +110,7 @@ public class FooterRecyclerActivity extends AppCompatActivity implements SwipeRe
 
     private void getTestDatas(int page, final TestCallBack testCallBack) {
         testModules = new ArrayList<>();
-        for (int i = 0; i < PAGE_COUNT; i++) {
+        for (int i = 0; i < PAGE_COUNT-10; i++) {
             TestModule testModule = new TestModule("item" + page + i);
             testModules.add(testModule);
         }
