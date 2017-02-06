@@ -1,15 +1,12 @@
 package com.qingmu.footerrecyclerview.adapter;
 
 import android.content.Context;
-import android.support.v4.app.FragmentManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
@@ -21,7 +18,6 @@ import com.qingmu.footerrecyclerview.utils.Util;
 import com.qingmu.footerrecyclerview.viewHolder.ViewHolder;
 
 import java.util.ArrayList;
-import java.util.TimerTask;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -33,15 +29,16 @@ import butterknife.ButterKnife;
 public class FooterRecyclerAdapter extends RecyclerView.Adapter {
     private final RecyclerView mRecyclerView;
     private final Context mContext;
-    //    public ArrayList<TestModule> mItemDatas;
     private LoadMoreDataListener mLoadMoreDataListener;
     private boolean isLoading;
     private int lastVisibleItemPosition;
     private int totalItemCount;
     //预留的阈值
     private int visibleThreshold = 5;
-    //itemViewTypePosition
-    private int VIEW_LOADMORE = 101;
+    //itemViewType
+    private int VIEW_FOOTER = 101;
+    private int VIEW_TITLE = 102;
+    private int VIEW_MISSION = 103;
 
     private View mLoadingView; //分页加载中view
     private View mLoadFailedView; //分页加载失败view
@@ -49,10 +46,7 @@ public class FooterRecyclerAdapter extends RecyclerView.Adapter {
     private View mEmptyView; //首次预加载view
     private View mReloadView; //首次预加载失败、或无数据的view
     private RelativeLayout mFooterLayout;//footer view
-    public boolean isNoMoreData;//没有更多数据的标记
     ArrayList<ParentOfRecord> mItemDatas = new ArrayList<>();//真实的数据
-    private int VIEW_TITLE = 102;
-    private int VIEW_MISSION = 103;
 
     public FooterRecyclerAdapter(Context context, ArrayList<ParentOfRecord> itemDatas, RecyclerView recyclerView) {
         mContext = context;
@@ -67,7 +61,7 @@ public class FooterRecyclerAdapter extends RecyclerView.Adapter {
 
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        if (viewType == VIEW_LOADMORE) {
+        if (viewType == VIEW_FOOTER) {
 
             if (mFooterLayout == null) {
                 mFooterLayout = new RelativeLayout(mContext);
@@ -109,7 +103,7 @@ public class FooterRecyclerAdapter extends RecyclerView.Adapter {
     @Override
     public int getItemViewType(int position) {
         if (mItemDatas.get(position) == null) {
-            return VIEW_LOADMORE;
+            return VIEW_FOOTER;
         } else if (mItemDatas.get(position).isTitle) {
             return VIEW_TITLE;
         } else {
@@ -212,10 +206,6 @@ public class FooterRecyclerAdapter extends RecyclerView.Adapter {
 
     public void setLoadEndView(int loadEndId) {
         setLoadEndView(Util.inflate(mContext, loadEndId));
-    }
-
-    public void setNoMoreData(boolean b) {
-        isNoMoreData = b;
     }
 
 
