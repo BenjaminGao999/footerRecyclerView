@@ -167,7 +167,7 @@ public class FooterRecyclerAdapter extends RecyclerView.Adapter {
         }
         removeFooterView();
         RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT);
+                (int) (mContext.getResources().getDisplayMetrics().density * 60));
         mFooterLayout.addView(footerView, params);
     }
 
