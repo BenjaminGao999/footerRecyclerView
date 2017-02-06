@@ -110,7 +110,7 @@ public class FooterRecyclerActivity extends AppCompatActivity implements SwipeRe
 
     private void getTestDatas(int page, final TestCallBack testCallBack) {
         testModules = new ArrayList<>();
-        for (int i = 0; i < PAGE_COUNT-10; i++) {
+        for (int i = 0; i < PAGE_COUNT; i++) {
             TestModule testModule = new TestModule("item" + page + i);
             testModules.add(testModule);
         }
