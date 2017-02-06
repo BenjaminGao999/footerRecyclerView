@@ -1,7 +1,6 @@
 package com.qingmu.footerrecyclerview.adapter;
 
 import android.content.Context;
-import android.support.v4.app.FragmentManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -16,12 +15,11 @@ import android.widget.TextView;
 import com.qingmu.footerrecyclerview.R;
 import com.qingmu.footerrecyclerview.callback.LoadMoreDataListener;
 import com.qingmu.footerrecyclerview.module.ParentOfRecord;
-import com.qingmu.footerrecyclerview.module.RecordData;
+import com.qingmu.footerrecyclerview.module.TestModule;
 import com.qingmu.footerrecyclerview.utils.Util;
 import com.qingmu.footerrecyclerview.viewHolder.ViewHolder;
 
 import java.util.ArrayList;
-import java.util.TimerTask;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -30,10 +28,10 @@ import butterknife.ButterKnife;
  * Created by Administrator on 2017/2/5.
  */
 
-public class FooterRecyclerAdapter extends RecyclerView.Adapter {
+public class FooterRecyclerTestAdapter extends RecyclerView.Adapter {
     private final RecyclerView mRecyclerView;
     private final Context mContext;
-    //    public ArrayList<TestModule> mItemDatas;
+    public ArrayList<TestModule> mItemDatas;
     private LoadMoreDataListener mLoadMoreDataListener;
     private boolean isLoading;
     private int lastVisibleItemPosition;
@@ -41,7 +39,8 @@ public class FooterRecyclerAdapter extends RecyclerView.Adapter {
     //预留的阈值
     private int visibleThreshold = 5;
     //itemViewTypePosition
-    private int VIEW_LOADMORE = 101;
+    private int VIEW_ITEM = 101;
+    private int VIEW_LOADMORE = 102;
 
     private View mLoadingView; //分页加载中view
     private View mLoadFailedView; //分页加载失败view
@@ -50,11 +49,9 @@ public class FooterRecyclerAdapter extends RecyclerView.Adapter {
     private View mReloadView; //首次预加载失败、或无数据的view
     private RelativeLayout mFooterLayout;//footer view
     public boolean isNoMoreData;//没有更多数据的标记
-    ArrayList<ParentOfRecord> mItemDatas = new ArrayList<>();//真实的数据
-    private int VIEW_TITLE = 102;
-    private int VIEW_MISSION = 103;
+    ArrayList<ParentOfRecord> mParentOfRecords = new ArrayList<>();//真实的数据
 
-    public FooterRecyclerAdapter(Context context, ArrayList<ParentOfRecord> itemDatas, RecyclerView recyclerView) {
+    public FooterRecyclerTestAdapter(Context context, ArrayList<TestModule> itemDatas, RecyclerView recyclerView) {
         mContext = context;
         if (itemDatas == null || recyclerView == null) {
             throw new RuntimeException("构造参数不能为null");
@@ -67,8 +64,10 @@ public class FooterRecyclerAdapter extends RecyclerView.Adapter {
 
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        if (viewType == VIEW_LOADMORE) {
-
+        if (viewType == VIEW_ITEM) {
+            View testView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_testview, parent, false);
+            return new CommonViewHolder(testView);
+        } else {
             if (mFooterLayout == null) {
                 mFooterLayout = new RelativeLayout(mContext);
             }
@@ -76,28 +75,15 @@ public class FooterRecyclerAdapter extends RecyclerView.Adapter {
                 mFooterLayout = new RelativeLayout(mContext);
             }
             return ViewHolder.create(mFooterLayout);
-        } else if (viewType == VIEW_TITLE) {
-            View titleView = LayoutInflater.from(mContext).inflate(R.layout.item_record_title, parent, false);
-            return new TitleViewHolder(titleView);
-        } else {
-            View missionView = LayoutInflater.from(mContext).inflate(R.layout.item_record_mission, parent, false);
-            return new MissionViewHolder(missionView);
         }
     }
 
     @Override
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
-        if (holder instanceof TitleViewHolder) {
-            TitleViewHolder titleViewHolder = (TitleViewHolder) holder;
-            String title = mItemDatas.get(position).title;
-            titleViewHolder.idTvRecordDate.setText(title);
-        }
+        if (holder instanceof CommonViewHolder) {
 
-        if (holder instanceof MissionViewHolder) {
-            MissionViewHolder missionViewHolder = (MissionViewHolder) holder;
-            RecordData.DataBeanX.DataBean bean = mItemDatas.get(position).bean;
-            missionViewHolder.idTvRecordName.setText(bean.getMissionName());
-            missionViewHolder.idTvRecordState.setText(bean.getStatus());
+            CommonViewHolder realHolder = (CommonViewHolder) holder;
+            realHolder.idTvTestitem.setText(mItemDatas.get(position).msg);
         }
     }
 
@@ -108,20 +94,28 @@ public class FooterRecyclerAdapter extends RecyclerView.Adapter {
 
     @Override
     public int getItemViewType(int position) {
-        if (mItemDatas.get(position) == null) {
-            return VIEW_LOADMORE;
-        } else if (mItemDatas.get(position).isTitle) {
-            return VIEW_TITLE;
-        } else {
-            return VIEW_MISSION;
-        }
+        return mItemDatas.get(position) != null ? VIEW_ITEM : VIEW_LOADMORE;
     }
 
+    //在原有数据的基础上添加新的数据
+    public void addDatas(ArrayList<TestModule> newDatas) {
+        int size = mItemDatas.size();
+        //因为之前的数据最后都为null
+        mItemDatas.remove(size - 1);
+        mItemDatas.addAll(size - 1, newDatas);
+        mItemDatas.add(null);
+        notifyDataSetChanged();
+    }
+
+    //清空原有数据，重新刷新数据
+    public void setTestNewDatas(ArrayList<TestModule> newDatas) {
+        mItemDatas = newDatas;
+        notifyDataSetChanged();
+    }
 
     //real data
     public void setNewDatas(ArrayList<ParentOfRecord> records) {
-        records.add(null);
-        mItemDatas = records;
+        mParentOfRecords = records;
         notifyDataSetChanged();
     }
 
@@ -219,25 +213,29 @@ public class FooterRecyclerAdapter extends RecyclerView.Adapter {
     }
 
 
-    static class TitleViewHolder extends RecyclerView.ViewHolder {
-        @BindView(R.id.id_tv_record_date)
-        TextView idTvRecordDate;
 
-        TitleViewHolder(View view) {
+    static class CommonViewHolder extends RecyclerView.ViewHolder {
+        @BindView(R.id.id_tv_testitem)
+        TextView idTvTestitem;
+
+        CommonViewHolder(View view) {
             super(view);
             ButterKnife.bind(this, view);
         }
     }
 
-    static class MissionViewHolder extends RecyclerView.ViewHolder {
-        @BindView(R.id.id_tv_record_name)
-        TextView idTvRecordName;
-        @BindView(R.id.id_tv_record_state)
-        TextView idTvRecordState;
+    static class LoadMoreViewHolder extends RecyclerView.ViewHolder {
+        @BindView(R.id.id_prob_loadmore)
+        ProgressBar idProbLoadmore;
+        @BindView(R.id.id_tv_loadmore)
+        TextView idTvLoadmore;
+        @BindView(R.id.id_ll_container_loadmore)
+        LinearLayout idLlContainerLoadmore;
 
-        MissionViewHolder(View view) {
+        LoadMoreViewHolder(View view) {
             super(view);
             ButterKnife.bind(this, view);
         }
     }
+
 }

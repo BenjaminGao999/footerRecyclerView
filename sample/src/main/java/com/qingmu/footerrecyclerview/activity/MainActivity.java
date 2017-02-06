@@ -32,9 +32,10 @@ public class MainActivity extends AppCompatActivity {
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.button:
-                startActivity(new Intent(this, FooterRecyclerActivity.class));
+                startActivity(new Intent(this, FooterRecyclerTestActivity.class));
                 break;
             case R.id.button2:
+                startActivity(new Intent(this, FooterRecyclerActivity.class));
                 break;
             case R.id.button3:
                 break;
