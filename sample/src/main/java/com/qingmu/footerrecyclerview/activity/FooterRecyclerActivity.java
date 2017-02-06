@@ -74,10 +74,12 @@ public class FooterRecyclerActivity extends AppCompatActivity implements SwipeRe
     private void initAdapter() {
         ArrayList<TestModule> testModules = new ArrayList<>();//为了方便后续操作，要求构造方法的参数不能为null
         idRecyclerviewFooter.setLayoutManager(new LinearLayoutManager(this));
-        mFooterRecyclerAdapter = new FooterRecyclerAdapter(testModules, idRecyclerviewFooter);
+        mFooterRecyclerAdapter = new FooterRecyclerAdapter(this, testModules, idRecyclerviewFooter);
         idRecyclerviewFooter.setAdapter(mFooterRecyclerAdapter);
         //设置加载更多的监听
 //        mFooterRecyclerAdapter.setLoadMoreDataListener(loadmoreListener);
+        //footerView添加loadMoreView
+        mFooterRecyclerAdapter.setLoadingView(R.layout.view_loadermore);
     }
 
     private LoadMoreDataListener loadmoreListener = new LoadMoreDataListener() {
@@ -86,6 +88,11 @@ public class FooterRecyclerActivity extends AppCompatActivity implements SwipeRe
             getTestDatas(++currentPage, new TestCallBack() {
                 @Override
                 public void onSuccess(ArrayList<TestModule> testModules) {
+                    if (testModules.size() < PAGE_COUNT) {
+                        mFooterRecyclerAdapter.setLoadEndView(R.layout.view_nomoredata);
+                        //没有更多数据，标记下
+                        mFooterRecyclerAdapter.setNoMoreData(true);
+                    }
                     mFooterRecyclerAdapter.addDatas(testModules);
                     mFooterRecyclerAdapter.setLoaded();
                 }
@@ -110,9 +117,15 @@ public class FooterRecyclerActivity extends AppCompatActivity implements SwipeRe
 
     private void getTestDatas(int page, final TestCallBack testCallBack) {
         testModules = new ArrayList<>();
-        for (int i = 0; i < PAGE_COUNT; i++) {
-            TestModule testModule = new TestModule("item" + page + i);
-            testModules.add(testModule);
+        int requestCount = PAGE_COUNT;
+        if (page >= 3) {
+            requestCount--;
+        }
+        if (!mFooterRecyclerAdapter.isNoMoreData) {
+            for (int i = 0; i < requestCount; i++) {
+                TestModule testModule = new TestModule("item" + page + i);
+                testModules.add(testModule);
+            }
         }
         mHandler.postDelayed(new Runnable() {
             @Override

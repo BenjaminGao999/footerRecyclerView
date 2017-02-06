@@ -1,5 +1,6 @@
 package com.qingmu.footerrecyclerview.adapter;
 
+import android.content.Context;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -8,11 +9,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.qingmu.footerrecyclerview.R;
 import com.qingmu.footerrecyclerview.callback.LoadMoreDataListener;
 import com.qingmu.footerrecyclerview.module.TestModule;
+import com.qingmu.footerrecyclerview.utils.Util;
+import com.qingmu.footerrecyclerview.viewHolder.ViewHolder;
 
 import java.util.ArrayList;
 
@@ -25,6 +29,7 @@ import butterknife.ButterKnife;
 
 public class FooterRecyclerAdapter extends RecyclerView.Adapter {
     private final RecyclerView mRecyclerView;
+    private final Context mContext;
     public ArrayList<TestModule> mItemDatas;
     private LoadMoreDataListener mLoadMoreDataListener;
     private boolean isLoading;
@@ -36,7 +41,16 @@ public class FooterRecyclerAdapter extends RecyclerView.Adapter {
     private int VIEW_ITEM = 101;
     private int VIEW_LOADMORE = 102;
 
-    public FooterRecyclerAdapter(ArrayList<TestModule> itemDatas, RecyclerView recyclerView) {
+    private View mLoadingView; //分页加载中view
+    private View mLoadFailedView; //分页加载失败view
+    private View mLoadEndView; //分页加载结束view
+    private View mEmptyView; //首次预加载view
+    private View mReloadView; //首次预加载失败、或无数据的view
+    private RelativeLayout mFooterLayout;//footer view
+    public boolean isNoMoreData;//没有更多数据的标记
+
+    public FooterRecyclerAdapter(Context context, ArrayList<TestModule> itemDatas, RecyclerView recyclerView) {
+        mContext = context;
         if (itemDatas == null || recyclerView == null) {
             throw new RuntimeException("构造参数不能为null");
         }
@@ -50,18 +64,23 @@ public class FooterRecyclerAdapter extends RecyclerView.Adapter {
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         if (viewType == VIEW_ITEM) {
             View testView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_testview, parent, false);
-            return new ViewHolder(testView);
+            return new CommonViewHolder(testView);
         } else {
-            View loadmoreView = LayoutInflater.from(parent.getContext()).inflate(R.layout.view_loadermore, parent, false);
-            return new LoadMoreViewHolder(loadmoreView);
+            if (mFooterLayout == null) {
+                mFooterLayout = new RelativeLayout(mContext);
+            }
+            if (mFooterLayout == null) {
+                mFooterLayout = new RelativeLayout(mContext);
+            }
+            return ViewHolder.create(mFooterLayout);
         }
     }
 
     @Override
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
-        if (holder instanceof ViewHolder) {
+        if (holder instanceof CommonViewHolder) {
 
-            ViewHolder realHolder = (ViewHolder) holder;
+            CommonViewHolder realHolder = (CommonViewHolder) holder;
             realHolder.idTvTestitem.setText(mItemDatas.get(position).msg);
         }
     }
@@ -81,7 +100,7 @@ public class FooterRecyclerAdapter extends RecyclerView.Adapter {
         int size = mItemDatas.size();
         //因为之前的数据最后都为null
         mItemDatas.remove(size - 1);
-        mItemDatas.addAll(size-1, newDatas);
+        mItemDatas.addAll(size - 1, newDatas);
         mItemDatas.add(null);
         notifyDataSetChanged();
     }
@@ -120,16 +139,76 @@ public class FooterRecyclerAdapter extends RecyclerView.Adapter {
             });
         }
     }
+
     public void setLoaded() {
         isLoading = false;
 
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder {
+    /**
+     * 清空footer view
+     */
+    private void removeFooterView() {
+        mFooterLayout.removeAllViews();
+    }
+
+    /**
+     * 添加新的footer view
+     *
+     * @param footerView
+     */
+    private void addFooterView(View footerView) {
+        if (footerView == null) {
+            return;
+        }
+
+        if (mFooterLayout == null) {
+            mFooterLayout = new RelativeLayout(mContext);
+        }
+        removeFooterView();
+        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        mFooterLayout.addView(footerView, params);
+    }
+
+    /**
+     * 初始化加载中布局
+     *
+     * @param loadingView
+     */
+    public void setLoadingView(View loadingView) {
+        mLoadingView = loadingView;
+        addFooterView(mLoadingView);
+    }
+
+    public void setLoadingView(int loadingId) {
+        setLoadingView(Util.inflate(mContext, loadingId));
+    }
+
+    /**
+     * 初始化全部加载完成布局
+     *
+     * @param loadEndView
+     */
+    public void setLoadEndView(View loadEndView) {
+        mLoadEndView = loadEndView;
+        addFooterView(mLoadEndView);
+    }
+
+    public void setLoadEndView(int loadEndId) {
+        setLoadEndView(Util.inflate(mContext, loadEndId));
+    }
+
+    public void setNoMoreData(boolean b) {
+        isNoMoreData = b;
+    }
+
+
+    static class CommonViewHolder extends RecyclerView.ViewHolder {
         @BindView(R.id.id_tv_testitem)
         TextView idTvTestitem;
 
-        ViewHolder(View view) {
+        CommonViewHolder(View view) {
             super(view);
             ButterKnife.bind(this, view);
         }
@@ -148,4 +227,5 @@ public class FooterRecyclerAdapter extends RecyclerView.Adapter {
             ButterKnife.bind(this, view);
         }
     }
+
 }
