@@ -111,9 +111,12 @@ public class FooterRecyclerActivity extends AppCompatActivity implements SwipeRe
             getDataFromNet((++currentPage) * PAGE_COUNT, new RecordCallBack() {
                 @Override
                 public void onSuccess(final ArrayList<ParentOfRecord> records) {
+
+                    //为了模拟加载更多布局的显示，这里做了一个延时显示，发布需删除！！！
                     new Handler().postDelayed(new Runnable() {
                         @Override
                         public void run() {
+                            //最最关键的是显示没有更多数据的时机，这里已获取数据和总数据的比较来把握没有数据的时机！
                             if (records.size() - daysCount == totalCount) {
                                 mFooterRecyclerAdapter.setLoadEndView(R.layout.view_nomoredata);
                                 //没有更多数据，标记下
